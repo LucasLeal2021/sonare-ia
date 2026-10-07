@@ -1,3 +1,9 @@
+# Dependências
+node_modules/
+
+# Arquivos gerados em testes locais
+saida/
+
 # Segredos
 .env
 .env.*

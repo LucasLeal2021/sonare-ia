@@ -1,0 +1,8 @@
+# Sempre LF no repositório e na pasta de trabalho: o código roda em containers Linux,
+# e scripts com CRLF quebram lá dentro ("bad interpreter", "\r: command not found").
+* text=auto eol=lf
+
+*.mp3 binary
+*.wav binary
+*.jpg binary
+*.png binary
