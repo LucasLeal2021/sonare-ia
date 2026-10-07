@@ -1,0 +1,16 @@
+{
+  "name": "prototipo-ace-step",
+  "private": true,
+  "description": "PROTÓTIPO DESCARTÁVEL — testa se o ACE-Step (HF Space) canta em PT-BR de graça. Não é código de produção.",
+  "type": "module",
+  "scripts": {
+    "gerar": "tsx --env-file=../.env gerar.ts",
+    "gerar-http": "tsx --env-file=../.env gerar-http.ts"
+  },
+  "dependencies": {
+    "@gradio/client": "^1.15.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}
