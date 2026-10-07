@@ -7,8 +7,10 @@
     "node": ">=22"
   },
   "scripts": {
+    "dev": "tsx watch src/main.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integracao": "vitest run --config vitest.integracao.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -16,5 +18,11 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-eventbridge": "^3.1147.0",
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@aws-sdk/client-sqs": "^3.1147.0",
+    "@aws-sdk/client-ssm": "^3.1147.0"
   }
 }

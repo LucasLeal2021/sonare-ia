@@ -1,0 +1,21 @@
+# Worker em desenvolvimento, na mesma rede do Floci (criada pelo docker-compose do sonare-api).
+# Subir:   docker compose up -d --build
+# Testes:  docker compose run --rm worker npm run test:integracao
+services:
+  worker:
+    build: .
+    volumes:
+      - .:/app                # seu código, editado no Windows, visto pelo container
+      - /app/node_modules     # mas as dependências são as do Linux, instaladas na imagem
+    environment:
+      AMBIENTE: local
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://floci:4566   # dentro da rede sonare-net, "floci" existe
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    command: npm run dev
+
+networks:
+  default:
+    name: sonare-net
+    external: true
