@@ -1,5 +1,7 @@
 import { DeleteMessageCommand, ReceiveMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { criarArmazenamentoS3 } from "./aws/armazenamentoS3";
+import { buscarCredenciaisCloudflare } from "./aws/credenciaisCloudflare";
+import { criarGeradorCloudflare } from "./geradores/geradorCloudflare";
 import { criarPublicadorEventBridge } from "./aws/publicadorEventBridge";
 import type { Config } from "./config";
 import { criarGeradorKokoro } from "./geradores/geradorKokoro";
@@ -10,7 +12,8 @@ export function criarWorker(config: Config) {
     sqs: new SQSClient({}),
     filaUrl: config.filaGeracoesUrl,
     deps: {
-      gerador: criarGeradorKokoro(),
+      geradorDeNarracao: criarGeradorKokoro(),
+      geradorDeImagem: criarGeradorCloudflare(() => buscarCredenciaisCloudflare(config)),
       armazenamento: criarArmazenamentoS3(config),
       eventos: criarPublicadorEventBridge(config),
     },
@@ -21,8 +24,9 @@ type Worker = ReturnType<typeof criarWorker>;
 
 /**
  * Pega UMA mensagem da fila de Gerações (uma Geração por vez, Q7) e a processa.
- * Só apaga a mensagem quando a Criação ficou pronta; nos outros casos ela volta para a fila
- * quando o visibility timeout acabar, e depois da terceira entrega a SQS a manda para a DLQ.
+ * Apaga a mensagem quando a Criação ficou pronta ou foi recusada de vez (não adianta repetir);
+ * nos outros casos ela volta para a fila quando o visibility timeout acabar, e depois da
+ * terceira entrega a SQS a manda para a DLQ.
  */
 export async function processarProximasMensagens(worker: Worker, opcoes = { esperaSegundos: 20 }) {
   const { Messages = [] } = await worker.sqs.send(
@@ -40,7 +44,7 @@ export async function processarProximasMensagens(worker: Worker, opcoes = { espe
     const resultado = await processarMensagem({ corpo: m.Body ?? "", tentativa }, worker.deps);
 
     log({ criacaoId: criacaoIdDe(m.Body), tentativa, ...resultado, duracaoMs: Date.now() - inicio });
-    if (resultado.tipo === "concluida") {
+    if (resultado.tipo === "concluida" || resultado.tipo === "recusada") {
       await worker.sqs.send(new DeleteMessageCommand({ QueueUrl: worker.filaUrl, ReceiptHandle: m.ReceiptHandle }));
     }
   }

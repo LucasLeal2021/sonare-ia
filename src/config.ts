@@ -5,6 +5,8 @@ export type Config = {
   filaGeracoesUrl: string;
   filaCriacoesConcluidasUrl: string;
   barramentoEventos: string;
+  /** Opcional: sem ele, só as Imagens falham; as Narrações seguem funcionando. */
+  cloudflareSegredo?: string;
 };
 
 /** Lê no SSM Parameter Store o que a base do Terraform publicou (ADR 0008). */
@@ -24,5 +26,6 @@ export async function carregarConfig(ambiente = process.env.AMBIENTE ?? "local")
     filaGeracoesUrl: ler("sqs/geracoes-url"),
     filaCriacoesConcluidasUrl: ler("sqs/criacoes-concluidas-url"),
     barramentoEventos: ler("eventbridge/barramento"),
+    cloudflareSegredo: Parameters.find((p) => p.Name === `${caminho}cloudflare/segredo`)?.Value,
   };
 }

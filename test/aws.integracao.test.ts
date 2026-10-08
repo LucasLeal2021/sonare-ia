@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { criarArmazenamentoS3 } from "../src/aws/armazenamentoS3";
 import { criarPublicadorEventBridge } from "../src/aws/publicadorEventBridge";
 import { carregarConfig, type Config } from "../src/config";
-import { esperarEventoNaFilaDaApi } from "./apoioIntegracao";
+import { criarOuvinteDeAvisos } from "./apoioIntegracao";
 
 const AUDIO = new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00, 0x2a]);
 
@@ -18,20 +18,24 @@ describe("adaptadores da AWS (Floci)", () => {
   it("o Áudio salvo no S3 pode ser lido de volta pelo mesmo caminho", async () => {
     const chave = `testes/${randomUUID()}.mp3`;
 
-    await criarArmazenamentoS3(config).salvar(chave, AUDIO);
+    await criarArmazenamentoS3(config).salvar(chave, AUDIO, "audio/mpeg");
 
     const s3 = new S3Client({ forcePathStyle: true });
     const objeto = await s3.send(new GetObjectCommand({ Bucket: config.bucketCriacoes, Key: chave }));
     expect(await objeto.Body!.transformToByteArray()).toEqual(AUDIO);
   });
 
-  it("um aviso de CriacaoConcluida publicado no EventBridge chega na fila da API", async () => {
+  it("um aviso de CriacaoConcluida publicado no barramento chega a quem escuta os avisos do worker", async () => {
+    const ouvinte = await criarOuvinteDeAvisos(config);
     const criacaoId = `teste-${randomUUID()}`;
+    try {
+      await criarPublicadorEventBridge(config).publicar({ tipo: "CriacaoConcluida", criacaoId, chaveAudio: "narracoes/x.mp3" });
 
-    await criarPublicadorEventBridge(config).publicar({ tipo: "CriacaoConcluida", criacaoId, chaveAudio: "narracoes/x.mp3" });
-
-    const evento = await esperarEventoNaFilaDaApi(config, criacaoId);
-    expect(evento["detail-type"]).toBe("CriacaoConcluida");
-    expect(evento.detail).toEqual({ criacaoId, chaveAudio: "narracoes/x.mp3" });
+      const evento = await ouvinte.esperarAviso(criacaoId);
+      expect(evento["detail-type"]).toBe("CriacaoConcluida");
+      expect(evento.detail).toEqual({ criacaoId, chaveAudio: "narracoes/x.mp3" });
+    } finally {
+      await ouvinte.remover();
+    }
   });
 });
