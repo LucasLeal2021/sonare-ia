@@ -1,6 +1,9 @@
 # Worker em desenvolvimento, na mesma rede do Floci (criada pelo docker-compose do sonare-api).
-# Subir:   docker compose up -d --build
+# Dia a dia: docker compose up   (deixe rodando; mostra os logs; Ctrl+C para parar)
+# Subir em 2º plano: docker compose up -d --build
 # Testes:  docker compose run --rm worker npm run test:integracao
+# Instalou uma dependência nova? docker compose up -d --build -V
+#   (o -V descarta o node_modules antigo do container; sem ele, o pacote novo "não existe")
 services:
   worker:
     build: .
